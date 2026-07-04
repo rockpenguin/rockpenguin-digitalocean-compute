@@ -1,8 +1,32 @@
 ###############################################################################
-# DOMAINS
-# Get the list of DO hosted domains so we can double check Droplets DNS
+# LOCALS
 ###############################################################################
+locals {
+  # create a list of droplet tags to check against firewall names; need to
+  # flatten because otherwise it creates a list of lists :-)
+  # droplet_firewall_tags = flatten([for id,droplet in var.droplets : droplet.tags])
+}
+
+###############################################################################
+# DATA Resources
+###############################################################################
+
+# DOMAINS - Get the list of DO hosted domains so we can check Droplets' DNS
 data "digitalocean_domains" "all" {}
+
+###############################################################################
+# CERTIFICATES
+###############################################################################
+# resource "digitalocean_certificate" "cert" {
+#   for_each = var.certificates
+
+#   name = each.value.name
+#   type = each.value.type
+#   private_key = each.value.private_key
+#   leaf_certificate = each.value.leaf_certificate
+#   certificate_chain = each.value.certificate_chain
+#   domains = each.value.domains
+# }
 
 ###############################################################################
 # DROPLETS
@@ -35,16 +59,56 @@ resource "digitalocean_droplet" "droplet" {
   ipv6              = each.value.ipv6
 }
 
+###############################################################################
+# DROPLET DNS - Adding DNS for Droplets
+###############################################################################
 resource "digitalocean_record" "droplet_dns_a" {
   # ensure DNS naming is enabled and that the domain is valid e.g. ! misspelled
   for_each = {
-    for id, droplets in var.droplets : id => droplets
-      if droplets.dns_enabled && contains(data.digitalocean_domains.all.domains[*].name, droplets.dns_domain)
+    for id, droplet in var.droplets : id => droplet
+      if droplet.dns_enabled && contains(data.digitalocean_domains.all.domains[*].name, droplet.dns_domain)
   }
-
   domain = each.value.dns_domain
   name = each.value.name
   type = "A"
   ttl = 600
   value = digitalocean_droplet.droplet[each.key].ipv4_address
+}
+
+###############################################################################
+# FIREWALL-RELATED TAGS - Auto create a tag for each firewall name
+# Need to do this because firewall creation will fail if the tag
+# doesn't already exist
+###############################################################################
+resource "digitalocean_tag" "firewall_tag" {
+  for_each = var.firewalls
+  name = each.value.name
+}
+
+###############################################################################
+# FIREWALLS
+###############################################################################
+resource "digitalocean_firewall" "firewall" {
+  for_each = var.firewalls
+
+  name = each.value.name # replace( each.key, "_", "-" ) # Ensure that the firewall name doesn't contain underscores
+  tags = [digitalocean_tag.firewall_tag[each.key].name]
+
+  dynamic "inbound_rule" {
+    for_each = var.firewalls[each.key].ingress_rules
+    content {
+      protocol = inbound_rule.value.protocol
+      port_range = inbound_rule.value.port_range
+      source_addresses = inbound_rule.value.source_addresses
+    }
+  }
+
+  dynamic "outbound_rule" {
+    for_each = var.firewalls[each.key].egress_rules
+    content {
+      protocol = outbound_rule.value.protocol
+      port_range = outbound_rule.value.port_range
+      destination_addresses = outbound_rule.value.destination_addresses
+    }
+  }
 }
