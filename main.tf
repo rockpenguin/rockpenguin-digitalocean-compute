@@ -15,23 +15,9 @@ locals {
 data "digitalocean_domains" "all" {}
 
 ###############################################################################
-# CERTIFICATES
-###############################################################################
-# resource "digitalocean_certificate" "cert" {
-#   for_each = var.certificates
-
-#   name = each.value.name
-#   type = each.value.type
-#   private_key = each.value.private_key
-#   leaf_certificate = each.value.leaf_certificate
-#   certificate_chain = each.value.certificate_chain
-#   domains = each.value.domains
-# }
-
-###############################################################################
 # DROPLETS
 ###############################################################################
-resource "digitalocean_droplet" "droplet" {
+resource "digitalocean_droplet" "svr" {
   for_each = var.droplets
 
   image   = each.value.image
@@ -72,7 +58,17 @@ resource "digitalocean_record" "droplet_dns_a" {
   name = each.value.name
   type = "A"
   ttl = 600
-  value = digitalocean_droplet.droplet[each.key].ipv4_address
+  value = digitalocean_droplet.svr[each.key].ipv4_address
+}
+
+###############################################################################
+# DROPLET RESERVED IPs
+###############################################################################
+resource "digitalocean_reserved_ip" "rsvp_ip" {
+  for_each = var.reserved_ips
+
+  region = each.value.region
+  droplet_id = each.value.droplet_name != null ? digitalocean_droplet.svr[each.value.droplet_name].id : null
 }
 
 ###############################################################################

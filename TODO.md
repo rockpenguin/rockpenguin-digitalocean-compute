@@ -6,6 +6,7 @@
 - [X] Add Load Balancers
 - [X] Rename module to `rockpenguin-digitalocean-compute` to more accurately reflect API
 - [X] Move firewall resource into this module to reflect API; this will allow easier integration with LBs and Droplets
+- [X] Reserved IPs
 - [ ] Ensure that *all* resource names do not contain underscores; e.g. see firewall resource
 - [ ] Maybe set a var for DNS default TTLs for droplets and LBs
 - [X] LOAD BALANCERS: Auto create certs when entry protocol is HTTPS, HTTP2, or HTTP3
