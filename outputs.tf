@@ -7,9 +7,16 @@ output "droplet_a_records" {
 
 output "droplet_ids_map" {
   value = {
-    for key, val in digitalocean_droplet.droplet : key => val.id
+    for key, val in digitalocean_droplet.svr : key => val.id
   }
   description = "Map of Droplet IDs"
+}
+
+output "http_load_balancers" {
+  value = {
+    for id, lb in var.load_balancers : id =>
+      length(setintersection(lb.forwarding_rules[*].entry_protocol, ["https","http2","http3"]))
+    }
 }
 
 output "load_balancers_id_map" {
@@ -19,9 +26,6 @@ output "load_balancers_id_map" {
   description = "Map of LB IDs"
 }
 
-output "http_load_balancers" {
-  value = {
-    for id, lb in var.load_balancers : id =>
-      length(setintersection(lb.forwarding_rules[*].entry_protocol, ["https","http2","http3"]))
-    }
+output "reserved_ips" {
+  value = digitalocean_reserved_ip.rsvp_ip
 }

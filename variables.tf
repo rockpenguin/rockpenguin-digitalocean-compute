@@ -39,11 +39,23 @@ variable "droplets" {
     volume_ids        = optional(list(string))
     vpc_uuid          = optional(string)
     public_networking = optional(bool)
+    # reserved_ip_name  = optional(string)
     dns_enabled       = optional(bool, false)
     dns_domain        = optional(string)
     ipv6              = optional(bool, false)
   }))
   default = {}
+}
+
+###############################################################################
+# DROPLET RESERVED IPs
+###############################################################################
+variable "reserved_ips" {
+  description = "Reserved IP addresses"
+  type = map(object({
+    region = string
+    droplet_name = optional(string)
+  }))
 }
 
 ###############################################################################
