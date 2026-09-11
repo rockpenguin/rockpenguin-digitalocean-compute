@@ -7,7 +7,7 @@ output "droplet_a_records" {
 
 output "droplet_ids_map" {
   value = {
-    for key, val in digitalocean_droplet.svr : key => val.id
+    for key, val in digitalocean_droplet.vm : key => val.id
   }
   description = "Map of Droplet IDs"
 }
