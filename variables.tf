@@ -59,6 +59,24 @@ variable "reserved_ips" {
 }
 
 ###############################################################################
+# DROPLET VOLUME BLOCK STORAGE
+###############################################################################
+variable "volumes" {
+  description = "Volume block storage"
+  type = map(object({
+    region = string
+    name = string
+    size = number
+    description = optional(string)
+    droplet_id = optional(string)
+    snapshot_id = optional(string)
+    initial_filesystem_type = optional(string)
+    initial_filesystem_label = optional(string)
+    tags = optional(list(string))
+  }))
+}
+
+###############################################################################
 # FIREWALLS
 ###############################################################################
 variable "firewalls" {

@@ -17,7 +17,7 @@ data "digitalocean_domains" "all" {}
 ###############################################################################
 # DROPLETS
 ###############################################################################
-resource "digitalocean_droplet" "svr" {
+resource "digitalocean_droplet" "vm" {
   for_each = var.droplets
 
   image   = each.value.image
@@ -58,7 +58,7 @@ resource "digitalocean_record" "droplet_dns_a" {
   name = each.value.name
   type = "A"
   ttl = 600
-  value = digitalocean_droplet.svr[each.key].ipv4_address
+  value = digitalocean_droplet.vm[each.key].ipv4_address
 }
 
 ###############################################################################
@@ -68,7 +68,29 @@ resource "digitalocean_reserved_ip" "rsvp_ip" {
   for_each = var.reserved_ips
 
   region = each.value.region
-  droplet_id = each.value.droplet_name != null ? digitalocean_droplet.svr[each.value.droplet_name].id : null
+  droplet_id = each.value.droplet_name != null ? digitalocean_droplet.vm[each.value.droplet_name].id : null
+}
+
+###############################################################################
+# DROPLET VOLUMES
+###############################################################################
+resource "digitalocean_volume" "vol" {
+  for_each = var.volumes
+
+  region = each.value.region
+  name = replace(each.value.name, "_", "-")
+  size = each.value.size
+  description = each.value.description
+  snapshot_id = each.value.snapshot_id
+  initial_filesystem_type = each.value.initial_filesystem_type
+  initial_filesystem_label = each.value.initial_filesystem_label
+  tags = each.value.tags
+}
+
+resource "digitalocean_volume_attachment" "vol" {
+  for_each = var.volumes
+  droplet_id = digitalocean_droplet.vm[each.value.droplet_id].id
+  volume_id  = digitalocean_volume.vol[[ for id, vol in digitalocean_volume.vol : id if vol.name == replace(each.value.name, "_", "-") ][0] ].id
 }
 
 ###############################################################################
