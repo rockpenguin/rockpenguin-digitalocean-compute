@@ -25,15 +25,13 @@ resource "digitalocean_droplet" "vm" {
   region  = each.value.region
   size    = each.value.size
   backups = each.value.backups_enabled
-  dynamic "backup_policy" {
-    # If backups = false then make this an empty map
-    for_each = each.value.backups_enabled ? each.value.backup_policy : {}
-    content {
-      plan    = each.value.backup_policy.plan
-      weekday = each.value.backup_policy.weekday
-      hour    = each.value.backup_policy.hour
-    }
+
+  backup_policy {
+    plan    = each.value.backups_enabled ? each.value.backup_policy.plan : null
+    weekday = each.value.backups_enabled ? each.value.backup_policy.weekday : null
+    hour    = each.value.backups_enabled ? each.value.backup_policy.hour : null
   }
+
   droplet_agent     = each.value.droplet_agent
   monitoring        = each.value.monitoring
   ssh_keys          = each.value.ssh_keys
