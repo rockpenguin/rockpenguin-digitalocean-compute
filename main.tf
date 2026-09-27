@@ -26,10 +26,14 @@ resource "digitalocean_droplet" "vm" {
   size    = each.value.size
   backups = each.value.backups_enabled
 
-  backup_policy {
-    plan    = each.value.backups_enabled ? each.value.backup_policy.plan : null
-    weekday = each.value.backups_enabled ? each.value.backup_policy.weekday : null
-    hour    = each.value.backups_enabled ? each.value.backup_policy.hour : null
+  dynamic "backup_policy" {
+    # If backups_enabled = false then don't create backup_policy
+    for_each = each.value.backups_enabled ? [1] : []
+    content {
+      plan    = each.value.backup_policy.plan
+      weekday = each.value.backup_policy.weekday
+      hour    = each.value.backup_policy.hour
+    }
   }
 
   droplet_agent     = each.value.droplet_agent
